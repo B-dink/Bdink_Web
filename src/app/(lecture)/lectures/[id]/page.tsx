@@ -25,9 +25,20 @@ export default function LectureDetailPage({ params }: { params: { id: string } }
   const isFree = priceDetail.originPrice === 0;
   // payment 필드 = 이미 구매(수강)했는지 여부 (iOS LectureViewModel 기준)
   const isPurchased = lecture.payment;
+  // 시청 가능 여부 = 구매완료 또는 무료강의인 경우만
+  const canWatch = isPurchased || isFree;
   const finalPrice =
     priceDetail.finalPrice ??
     Math.round(priceDetail.originPrice * (1 - priceDetail.discountRate / 100));
+
+  const handleLectureClick = (lectureId: number) => {
+    if (!canWatch) {
+      alert("구매 후 시청하실 수 있습니다.");
+      return;
+    }
+    setActiveLectureId(lectureId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleFreeEnroll = async () => {
     setIsEnrolling(true);
@@ -41,11 +52,14 @@ export default function LectureDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  // 시청 불가 상태면(구매 전) activeLectureId가 어떤 경로로 세팅되든 플레이어를 렌더링하지 않음
+  const playableLectureId = canWatch ? activeLectureId : null;
+
   return (
     <main className="min-h-screen bg-base-bg pb-24 text-text-primary">
       <div className="mx-4 mt-4">
-        {activeLectureId ? (
-          <LecturePlayer lectureId={activeLectureId} onChangeLecture={setActiveLectureId} />
+        {playableLectureId ? (
+          <LecturePlayer lectureId={playableLectureId} onChangeLecture={setActiveLectureId} />
         ) : lecture.thumbnail ? (
           <div className="relative aspect-video overflow-hidden rounded-card">
             <Image src={lecture.thumbnail} alt={lecture.title} fill className="object-cover" />
@@ -140,24 +154,28 @@ export default function LectureDetailPage({ params }: { params: { id: string } }
                   {chapter.lectures.map((lec) => (
                     <li key={lec.lectureId}>
                       <button
-                        onClick={() => {
-                          setActiveLectureId(lec.lectureId);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
+                        onClick={() => handleLectureClick(lec.lectureId)}
                         className={`flex w-full items-center justify-between rounded-card px-3 py-2 text-left text-sm transition ${
                           activeLectureId === lec.lectureId
                             ? "bg-brand/20 text-brand"
                             : "bg-base-card hover:bg-base-card/70"
-                        }`}
+                        } ${!canWatch ? "opacity-60" : ""}`}
                       >
                         <span className="flex items-center gap-2">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
+                          {canWatch ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="5" y="11" width="14" height="9" rx="1.5" />
+                              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                            </svg>
+                          )}
                           {lec.title}
                         </span>
                         <span className="flex items-center gap-2 text-text-muted">
-                          {lec.progress && lec.progress !== "0%" && (
+                          {canWatch && lec.progress && lec.progress !== "0%" && (
                             <span className="text-xs text-brand">{lec.progress}</span>
                           )}
                           {lec.lectureTime}
