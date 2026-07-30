@@ -28,7 +28,7 @@ export default function LectureDetailPage({ params }: { params: { id: string } }
   // 시청 가능 여부 = 구매완료 또는 무료강의인 경우만
   const canWatch = isPurchased || isFree;
   const finalPrice =
-    priceDetail.finalPrice ??
+    priceDetail.discountPrice ??
     Math.round(priceDetail.originPrice * (1 - priceDetail.discountRate / 100));
 
   const handleLectureClick = (lectureId: number) => {

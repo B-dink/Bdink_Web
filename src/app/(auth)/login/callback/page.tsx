@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleKakaoCallback } from "@/features/auth/hooks/use-kakao-login";
 import { useAuthStore } from "@/shared/store/auth-store";
 
-export default function KakaoCallbackPage() {
+function KakaoCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setUser = useAuthStore((s) => s.setUser);
@@ -17,7 +17,6 @@ export default function KakaoCallbackPage() {
       setErrorMessage("인증 코드를 받지 못했습니다.");
       return;
     }
-
     handleKakaoCallback(code)
       .then((result) => {
         setUser({ id: result.data.memberId, nickname: "", email: "" });
@@ -29,12 +28,22 @@ export default function KakaoCallbackPage() {
   }, [searchParams, router, setUser]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <>
       {errorMessage ? (
         <p className="text-red-500">{errorMessage}</p>
       ) : (
         <p>로그인 처리 중...</p>
       )}
+    </>
+  );
+}
+
+export default function KakaoCallbackPage() {
+  return (
+    <main className="flex min-h-screen items-center justify-center">
+      <Suspense fallback={<p>로그인 처리 중...</p>}>
+        <KakaoCallbackContent />
+      </Suspense>
     </main>
   );
 }

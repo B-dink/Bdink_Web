@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { paymentApi } from "@/features/payment/api/payment-api";
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"processing" | "error">("processing");
@@ -33,11 +33,12 @@ export default function CheckoutSuccessPage() {
           orderId,
           amount: Number(amount),
         });
-
         await paymentApi.startSugang(Number(classRoomId));
-
         router.replace(`/lectures/${classRoomId}`);
-      } catch (e) {
+      } catch (e: any) {
+        // 실제 에러 내용을 콘솔에 남겨서 원인 파악 가능하게 함
+        console.error("결제 승인 실패:", e);
+        console.error("에러 응답 데이터:", e?.response?.data);
         setStatus("error");
         setErrorMessage("결제 처리 중 문제가 발생했습니다. 고객센터에 문의해주세요.");
       }
@@ -45,7 +46,7 @@ export default function CheckoutSuccessPage() {
   }, [searchParams, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-base-bg px-4 text-center text-text-primary">
+    <>
       {status === "processing" ? (
         <p>결제를 확인하고 있어요...</p>
       ) : (
@@ -53,6 +54,16 @@ export default function CheckoutSuccessPage() {
           <p className="text-red-400">{errorMessage}</p>
         </div>
       )}
+    </>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-base-bg px-4 text-center text-text-primary">
+      <Suspense fallback={<p>결제를 확인하고 있어요...</p>}>
+        <CheckoutSuccessContent />
+      </Suspense>
     </main>
   );
 }
